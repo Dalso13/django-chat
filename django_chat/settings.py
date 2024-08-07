@@ -17,7 +17,6 @@ from environ import Env
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
@@ -28,7 +27,6 @@ SECRET_KEY = 'django-insecure-y$vdm6f4f!3&1hv1i#qe8$!60rvu*bqql3$wkvz3n+d!s#uzt@
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -77,7 +75,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'django_chat.wsgi.application'
 ASGI_APPLICATION = "django_chat.asgi.application"
 
-
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#database
 
@@ -90,7 +87,7 @@ if env_path.exists():
 if "CHANNEL_LAYER_REDIS_URL" in env:
     channel_layer_redis = env.db_url("CHANNEL_LAYER_REDIS_URL")
     CHANNEL_LAYERS = {
-        'default' : {
+        'default': {
             "BACKEND": "channels_redis.core.RedisChannelLayer",
             "CONFIG": {
                 "hosts": [
@@ -104,14 +101,12 @@ if "CHANNEL_LAYER_REDIS_URL" in env:
         }
     }
 
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -131,7 +126,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
@@ -142,7 +136,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/

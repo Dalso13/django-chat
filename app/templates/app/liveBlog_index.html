@@ -10,3 +10,65 @@
         </div>
     </div>
 {% endblock %}
+
+{%  block extra-body %}
+    <script>
+        const handlers = {
+            ws: null,
+            connect(ws_url) {
+                this.ws = new WebSocket(ws_url);
+
+                this.ws.onopen = () => {
+                    console.log("웹소켓 서버와 접속됨.");
+                },
+                this.ws.onclose = (event) => {
+                    if(!event.wasClean) {
+                        console.log("웹소켓 서버와의 네트워크 단절로 인한 끊김");
+                    }
+                },
+                this.ws.onerror = () => {
+                    console.error("웹소켓 에러 발생");
+                },
+                this.ws.onmessage = (event) => {
+                    const jsonMessage = event.data;
+                    console.log("메세지 수진 : ", jsonMessage);
+                    const { type, post_id, post_partial_url } = JSON.parse(jsonMessage);
+                    switch (type) {
+                        case "liveBlog.post.created":
+                            this.postCreated(post_id,post_partial_url);
+                            break;
+                        case "liveBlog.post.updated":
+                            this.postUpdated(post_id,post_partial_url);
+                            break;
+                        case "liveBlog.post.deleted":
+                            this.postDeleted(post_id,post_partial_url);
+                            break;
+                        default:
+                            console.error(`Invalid message type : ${type}`);
+                    }
+                };
+            },
+            postCreated(post_id, post_partial_url) {
+                fetch(post_partial_url)
+                    .then(response => response.text())
+                    .then(html => {
+                        document.querySelector("#post-list").insertAdjacentHTML("afterbegin", html);
+                    });
+            },
+            postUpdated(post_id, post_partial_url) {
+                fetch(post_partial_url)
+                    .then(response => response.text())
+                    .then(html => {
+                        const css_selector = `[data-post-id="${post_id}"]`;
+                        document.querySelector(css_selector).outerHTML = html;
+                    });
+            },
+            postDeleted(post_id) {
+                const css_selector = `[data-post-id="${post_id}"]`;
+                document.querySelector(css_selector).remove();
+            },
+        };
+        const ws_url = "ws://localhost:8000/ws/live-blog/";
+        handlers.connect(ws_url);
+    </script>
+{% endblock %}
