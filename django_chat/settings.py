@@ -9,8 +9,10 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
-
+import os
 from pathlib import Path
+
+from environ import Env
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_bootstrap5',
     # local app
     'app',
 ]
@@ -76,7 +79,31 @@ ASGI_APPLICATION = "django_chat.asgi.application"
 
 
 # Database
-# https://docs.djangoproject.com/en/4.1/ref/settings/#databases
+# https://docs.djangoproject.com/en/4.1/ref/settings/#database
+
+env = Env()
+
+env_path = BASE_DIR / ".env"
+if env_path.exists():
+    with env_path.open("rt", encoding="utf-8") as f:
+        env.read_env(f, overwrite=True)
+if "CHANNEL_LAYER_REDIS_URL" in env:
+    channel_layer_redis = env.db_url("CHANNEL_LAYER_REDIS_URL")
+    CHANNEL_LAYERS = {
+        'default' : {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [
+                    {
+                        "host": channel_layer_redis["HOST"],
+                        "port": channel_layer_redis["PORT"] or 6379,
+                        "password": channel_layer_redis["PASSWORD"],
+                    }
+                ]
+            }
+        }
+    }
+
 
 DATABASES = {
     'default': {
