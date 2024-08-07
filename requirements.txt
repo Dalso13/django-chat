@@ -1,0 +1,31 @@
+# coding: utf-8
+# 한글주석을 사용할때 위와 같이 인코딩 지정 해야됨
+
+# 장고 프레임워크
+django~=4.1.0
+# 채널스 기본 라이브러리 + daphne
+channels[daphne]~=4.0.0
+# 채널스, 채널 레이어 Redis 백엔드 라이브러리
+
+channels_redis~=4.0.0
+# 레디스 라이브러리 (4.4.0은 2022년 12월 기준으로 최신버전이지만, 종종 레디스 ZREMRANGEBYSCORE 명령에 대한 응답이 None으로 처리되어 TypeError가 발생하는 버그가 있어서 skip)
+
+redis!=4.4.0
+# 환경변수의 손쉬운 settings 적용
+
+django-environ
+# 장고 내에서 손쉬운 bootstrap5 사용
+
+django-bootstrap5
+# 가벼운 HTTP 클라이언트 라이브러리
+
+requests
+# HTML 파싱 라이브러리
+
+beautifulsoup4
+# 테스트
+
+pytest
+pytest-django
+pytest-testdox
+pytest-asyncio
