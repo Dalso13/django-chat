@@ -15,15 +15,23 @@
     <script>
         const handlers = {
             ws: null,
+            retry: 0,
             connect(ws_url) {
                 this.ws = new WebSocket(ws_url);
 
                 this.ws.onopen = () => {
+                    this.retry = 0;
                     console.log("웹소켓 서버와 접속됨.");
                 },
                 this.ws.onclose = (event) => {
                     if(!event.wasClean) {
-                        console.log("웹소켓 서버와의 네트워크 단절로 인한 끊김");
+                        console.error("웹소켓 서버와의 네트워크 단절로 인한 끊김");
+                        if(this.retry < 3) {
+                            console.log("재 접속중...");
+                            this.reconnect();
+                        } else {
+                            console.error("3번이상 실패...");
+                        }
                     }
                 },
                 this.ws.onerror = () => {
@@ -47,6 +55,10 @@
                             console.error(`Invalid message type : ${type}`);
                     }
                 };
+            },
+            reconnect() {
+                this.connect();
+                this.retry++;
             },
             postCreated(post_id, post_partial_url) {
                 fetch(post_partial_url)
