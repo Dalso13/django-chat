@@ -1,0 +1,129 @@
+{% extends "chat/base.html" %}
+
+{% block extra-style %}
+    <style>
+        .chat-message > div {
+            background-color: #3b3b3b;
+            color: #e1e1e1;
+            border-radius: 0.8em;
+            padding: 0.4em;
+            margin: 0.4em;
+            display: inline-block;
+            white-space: pre-wrap;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    {# TODO: 웹소켓으로 실시간 채팅 기능 구현하기 #}
+    <div class="container my-5">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="card" style="height: 600px">
+                    <div class="card-header">
+                        채팅방 : {{ room_name }}
+                    </div>
+                    <div class="card-body overflow-hidden">
+                        <div id="chat_messages" class="w-100 h-100 border-0 overflow-scroll"></div>
+                    </div>
+                    <div class="card-footer">
+                        <form id="message_form">
+                            <input type="text" name="message" class="form-control" autofocus autocomplete="off"/>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-3"/>
+            <a href="{% url 'chat:index' %}" class="btn btn-primary">home</a>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block extra-script %}
+    <script defer>
+        const handlers = {
+            chat_messages_tag: null,
+            ws: null,
+            retry: 0,
+            connect(ws_url) {
+                this.ws = new WebSocket(ws_url || this.ws?.url)
+
+                this.ws.onopen = () => {
+                    this.retry = 0;
+                    console.log("웹소켓 서버와 접속됨.");
+                };
+                this.ws.onclose = (event) => {
+                    if (!event.wasClean) {
+                        console.error("웹소켓 서버와의 네트워크 단절로 인한 끊김");
+                        if (this.retry < 3) {
+                            this.retry++;
+                            setTimeout(() => {
+                                console.log("재 접속중...");
+                                this.reconnect();
+                            }, 1000)
+                        } else {
+                            console.error("3번이상 실패... 대기실로 이동");
+                            location.href = "{% url 'chat:index' %}";
+                        }
+                    }
+                };
+                this.ws.onerror = () => {
+                    console.error("웹소켓 에러 발생 대기실로 이동");
+                    location.href = "{% url 'chat:index' %}";
+                };
+                this.ws.onmessage = (event) => {
+                    const jsonMessage = event.data;
+                    console.log("메세지 수진 : ", jsonMessage);
+                    const { type, message } = JSON.parse(jsonMessage);
+                    switch (type) {
+                        case 'chat.message':
+                            this.appendMessage(message);
+                            break;
+                        default:
+                            console.error(`Invalid message type : ${type}`);
+                    }
+                };
+            },
+            init() {
+                this.chat_messages_tag = document.querySelector("#chat_messages");
+                document.querySelector("#message_form").addEventListener("submit", this.onsubmit.bind(this),)
+            },
+            reconnect() {
+                this.connect();
+            },
+            appendMessage(message) {
+                const element = document.createElement("div");
+                element.className = "chat-message";
+                const wrapper = document.createElement("div");
+                wrapper.textContent = message;
+                element.appendChild(wrapper);
+                this.chat_messages_tag.appendChild(element);
+                this.chat_messages_tag.scrollTop = this.chat_messages_tag.scrollHeight;
+            },
+            onsubmit(event) {
+                event.preventDefault();
+
+                const form_data = new FormData(event.target);
+                const props = Object.fromEntries(form_data);
+                console.log(props)
+                event.target.reset(); // reset form
+
+                const {message} = props;
+                console.log("웹소켓으로 전송할 메세지 :", message);
+
+                this.ws.send(JSON.stringify({
+                    type: "chat.message",
+                    message: message
+                }))
+            },
+        }
+        handlers.init();
+
+        const protocol = location.protocol === "http:" ? "ws:" : "wss:";
+        const ws_url = protocol + "//" + location.host + "/ws" + location.pathname;
+        handlers.connect(ws_url)
+    </script>
+{% endblock %}
