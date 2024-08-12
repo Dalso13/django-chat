@@ -6,7 +6,15 @@
         <li>
             {#  TODO: 채팅방 목록을 리스트로 보여주기 #}
             <a href="{% url 'chat:room_chat' 'test' %}">테스트 채팅방 진입</a> <br/>
+        </li>
+        <hr/>
+        <li>
             <a href="{% url 'chat:room_new' %}">새 채팅방 만들기</a>
         </li>
+        <hr/>
+        <h3>채팅창 리스트</h3>
+        {% for room in room_list %}
+            <a href="{% url 'chat:room_chat' room.pk %}">{{ room.name }}</a> <br/>
+        {% endfor %}
     </ul>
 {% endblock %}
