@@ -1,0 +1,10 @@
+{% extends "accounts/base.html" %}
+
+{% block content %}
+    <h2>{{ user.username }}님 프로필</h2>
+
+    <ul>
+        <li>username: {{ user.username }}</li>
+        <li>lastLogin: {{ user.last_login }}</li>
+    </ul>
+{% endblock %}
