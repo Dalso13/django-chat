@@ -1,9 +1,11 @@
+from django.contrib.auth.models import User
 from django.db import models
 
 
 # Create your models here.
 
 class Room(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_room_set', )
     name = models.CharField(max_length=100)
 
     @property

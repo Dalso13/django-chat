@@ -44,6 +44,10 @@
             </div>
             <hr class="my-3"/>
             <a href="{% url 'chat:index' %}" class="btn btn-primary">home</a>
+
+            {% if request.user == room_owner %}
+                <a href="{% url 'chat:room_delete' room_pk %}" class="btn btn-danger">채팅방 삭제</a>
+            {% endif %}
         </div>
     </div>
 {% endblock %}
