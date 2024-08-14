@@ -13,6 +13,13 @@
             max-width: 80%;
             word-wrap: break-word;
         }
+        .chat-message.me{
+            text-align: right;
+        }
+        .chat-message.me > div {
+            background-color: #1f8cff;
+            color: #fff;
+        }
     </style>
 {% endblock %}
 
@@ -77,10 +84,10 @@
                 this.ws.onmessage = (event) => {
                     const jsonMessage = event.data;
                     console.log("메세지 수진 : ", jsonMessage);
-                    const { type, message } = JSON.parse(jsonMessage);
+                    const { type, message, sender } = JSON.parse(jsonMessage);
                     switch (type) {
                         case 'chat.message':
-                            this.appendMessage(message);
+                            this.appendMessage(message, sender);
                             break;
                         default:
                             console.error(`Invalid message type : ${type}`);
@@ -94,11 +101,19 @@
             reconnect() {
                 this.connect();
             },
-            appendMessage(message) {
+            appendMessage(message, sender) {
                 const element = document.createElement("div");
                 element.className = "chat-message";
+
+                let footer = "";
+                if(sender === "{{ user.username }}") {
+                    element.className +=" me";
+                } else if (sender) {
+                    footer = ` from ${sender}`;
+                }
+
                 const wrapper = document.createElement("div");
-                wrapper.textContent = message;
+                wrapper.textContent = message  + footer;
                 element.appendChild(wrapper);
                 this.chat_messages_tag.appendChild(element);
                 this.chat_messages_tag.scrollTop = this.chat_messages_tag.scrollHeight;
@@ -116,7 +131,7 @@
 
                 this.ws.send(JSON.stringify({
                     type: "chat.message",
-                    message: message
+                    message: message,
                 }))
             },
         }
