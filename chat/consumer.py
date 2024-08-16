@@ -49,3 +49,7 @@ class ChatConsumer(JsonWebsocketConsumer):
 
     def chat_message(self, message_dict):
         self.send_json(message_dict)
+
+    def chat_room_deleted(self, message_dict):
+        custom_code = 4000
+        self.close(code=custom_code)

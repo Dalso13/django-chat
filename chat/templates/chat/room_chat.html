@@ -50,6 +50,24 @@
             {% endif %}
         </div>
     </div>
+
+    <!-- modal -->
+    <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel">Modal title</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    ...
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 
@@ -67,7 +85,14 @@
                     console.log("웹소켓 서버와 접속됨.");
                 };
                 this.ws.onclose = (event) => {
-                    if (!event.wasClean) {
+                    const closeCode = event.code;
+                    console.log(closeCode)
+                    if (closeCode === 4000) {
+                        console.log('a')
+                        this.modal("채팅방이 삭제되었습니다. 대기실로 이동합니다.", () => {
+                            location.href = {% url "chat:index" %};
+                        })
+                    } else if (!event.wasClean) {
                         console.error("웹소켓 서버와의 네트워크 단절로 인한 끊김");
                         if (this.retry < 3) {
                             this.retry++;
@@ -138,6 +163,21 @@
                     message: message,
                 }))
             },
+            modal(message, ok_handler) {
+                const modalEle = document.getElementById("staticBackdrop");
+                const bodyEle = modalEle.querySelector(".modal-body");
+                const buttonEle = modalEle.querySelector(".modal-footer button");
+
+                bodyEle.textContent = message;
+
+                buttonEle.addEventListener("click", () => {
+                    if(ok_handler) ok_handler();
+                    modal.hide();
+                });
+
+                const modal = new bootstrap.Modal(modalEle);
+                modal.show();
+            }
         }
         handlers.init();
 

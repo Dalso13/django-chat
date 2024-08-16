@@ -6,7 +6,9 @@ from chat.forms import RoomForm
 from chat.models import Room
 from hashids import Hashids
 
-hashids = Hashids(salt='thismysalt', min_length=4)
+
+# TODO:채팅방 삭제에서 문제가 생겨서 일단 주석처리
+#hashids = Hashids(salt='thismysalt', min_length=4)
 
 
 # Create your views here.
@@ -18,9 +20,10 @@ def index(request):
 
 @login_required
 def room_chat(request, room_pk: str):
-    if room_pk.isdecimal():
-        return redirect("chat:room_chat", hashids.encode(int(room_pk)))
-    room = get_object_or_404(Room, pk=hashids.decode(room_pk)[0])
+    #if room_pk.isdecimal():
+    #    return redirect("chat:room_chat", room_pk)
+    #room_pk = hashids.decode(room_pk)[0];
+    room = get_object_or_404(Room, pk=room_pk)
     return render(request, "chat/room_chat.html", {
         "room_name": room.name,
         "room_owner": room.owner,
@@ -39,7 +42,8 @@ def room_new(request):
             created_room.owner = request.user
             # 커밋
             created_room.save()
-            return redirect("chat:room_chat", hashids.encode(created_room.pk))
+            #room_pk = hashids.encode(created_room.pk)
+            return redirect("chat:room_chat", created_room.pk)
     else:
         form = RoomForm
     return render(request, "chat/room_form.html", {"form": form})
@@ -47,7 +51,8 @@ def room_new(request):
 
 @login_required
 def room_delete(request, room_pk: str):
-    room = get_object_or_404(Room, pk=hashids.decode(room_pk)[0])
+    #room_pk = hashids.decode(room_pk)[0]
+    room = get_object_or_404(Room, pk=room_pk)
 
     # 근데 이거는 프런트쪽에서 해도 되지않을까 싶다
     if room.owner != request.user:
