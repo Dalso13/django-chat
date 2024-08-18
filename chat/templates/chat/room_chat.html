@@ -27,7 +27,7 @@
     {# TODO: 웹소켓으로 실시간 채팅 기능 구현하기 #}
     <div class="container my-5">
         <div class="row">
-            <div class="col-sm-12">
+            <div class="col-sm-8">
                 <div class="card" style="height: 600px">
                     <div class="card-header">
                         채팅방 : {{ room_name }}
@@ -39,6 +39,16 @@
                         <form id="message_form">
                             <input type="text" name="message" class="form-control" autofocus autocomplete="off"/>
                         </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="card" style="height: 600px">
+                    <div class="card-header">
+                        접속 유저 <span id="user-count"></span>
+                    </div>
+                    <div class="card-body overflow-hidden">
+                        <ul id="user-list"></ul>
                     </div>
                 </div>
             </div>
@@ -77,12 +87,20 @@
             chat_messages_tag: null,
             ws: null,
             retry: 0,
+            username_set: new Set(),
             connect(ws_url) {
                 this.ws = new WebSocket(ws_url || this.ws?.url)
 
                 this.ws.onopen = () => {
                     this.retry = 0;
                     console.log("웹소켓 서버와 접속됨.");
+
+                    fetch("{% url "chat:room_users_view" room_pk %}")
+                        .then(response => response.json())
+                        .then(({ username_list }) => {
+                            this.username_set = new Set([...this.username_set, ...username_list]);
+                            this.update_user_list();
+                        })
                 };
                 this.ws.onclose = (event) => {
                     const closeCode = event.code;
@@ -113,10 +131,22 @@
                 this.ws.onmessage = (event) => {
                     const jsonMessage = event.data;
                     console.log("메세지 수진 : ", jsonMessage);
-                    const { type, message, sender } = JSON.parse(jsonMessage);
+                    const { type, message, sender, username } = JSON.parse(jsonMessage);
                     switch (type) {
                         case 'chat.message':
                             this.appendMessage(message, sender);
+                            break;
+                        case "chat.user.join":
+                            this.appendMessage(`${username}님이 들어오셨습니다.`);
+                            this.username_set.add(username);
+                            this.update_user_list()
+                            break;
+                        case "chat.user.leave":
+                            this.appendMessage(`${username}님이 퇴장하셨습니다.`);
+                            if (this.username_set.has(username)){
+                                this.username_set.delete(username);
+                                this.update_user_list()
+                            }
                             break;
                         default:
                             console.error(`Invalid message type : ${type}`);
@@ -162,6 +192,12 @@
                     type: "chat.message",
                     message: message,
                 }))
+            },
+            update_user_list() {
+               const userLi = [...this.username_set].map(username => `<li>${username}</li>`).join('');
+                document.querySelector("#user-list").innerHTML = userLi;
+
+                document.querySelector("#user-count").textContent = `(${this.username_set.size})`;
             },
             modal(message, ok_handler) {
                 const modalEle = document.getElementById("staticBackdrop");

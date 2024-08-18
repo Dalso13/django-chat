@@ -4,10 +4,64 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.signals import post_delete
 
+from django_chat.json_extended import ExtendedJSONEncoder, ExtendedJSONDecoder
+
 
 # Create your models here.
 
-class Room(models.Model):
+class OnlineUserMixin(models.Model):
+    class Meta:
+        abstract = True
+
+    online_user_set = models.ManyToManyField(
+        User, through="RoomMember", blank=True, related_name="joined_room_set"
+    )
+
+    def get_online_users(self):
+        return self.online_user_set.all()
+
+    def get_online_username(self):
+        # 리스트로 반환 (flat이 True이기 때문)
+        usernames = self.get_online_users().values_list("username", flat=True)
+        return list(usernames)
+
+    def is_joined_user(self, user):
+        # 채팅방에 유저가 존재하는지 여부를 확인
+        return self.get_online_users().filter(pk=user.pk).exists()
+
+    # user가 consumer를 통해 특정방으로 들어온 상황을 작성
+    def user_join(self, channel_name, user):
+        try:
+            room_member = RoomMember.objects.get(room=self, user=user)
+        except RoomMember.DoesNotExist:
+            room_member = RoomMember(room=self, user=user)
+
+        is_new_join = len(room_member.channel_names) == 0
+        room_member.channel_names.add(channel_name)
+
+        if room_member.pk is None:
+            room_member.save()
+        else:
+            room_member.save(update_fields=["channel_names"])
+        return is_new_join
+
+    # 유저가 채팅방을 나간 상황을 저장
+    def user_leave(self, channel_name, user):
+        try:
+            room_member = RoomMember.objects.get(room=self, user=user)
+        except RoomMember.DoesNotExist:
+            return True
+
+        room_member.channel_names.remove(channel_name)
+        if not room_member.channel_names:
+            room_member.delete()
+            return True
+        else:
+            room_member.save(update_fields=["channel_names"])
+            return False
+
+
+class Room(OnlineUserMixin, models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_room_set', )
     name = models.CharField(max_length=100)
 
@@ -40,3 +94,13 @@ post_delete.connect(
     sender=Room,
     dispatch_uid='room__on_post_delete',
 )
+
+
+class RoomMember(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE)
+    channel_names = models.JSONField(
+        default=set,
+        encoder=ExtendedJSONEncoder,
+        decoder=ExtendedJSONDecoder,
+    )
